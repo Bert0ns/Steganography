@@ -4,7 +4,11 @@ import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.BitSet;
+import java.util.stream.Stream;
 
 public class Stenography {
 
@@ -20,6 +24,8 @@ public class Stenography {
         int imgHeight = srcImage.getHeight();
         BufferedImage stenographyImg = new BufferedImage(imgWidth, imgHeight, BufferedImage.TYPE_INT_RGB);
 
+        ArrayList<Byte> fileBits = getBytesFromFile(src);
+
         for (int x = 0; x < imgWidth; x++)
         {
             for(int y = 0; y < imgHeight; y++)
@@ -30,19 +36,48 @@ public class Stenography {
                 System.out.println("Pixel(" +x+","+y+"): " + Arrays.toString(rgbPixel));
 
                 //Change RGB values
-                int[] encodedPixel = {0,0,0};
+                int[] encodedPixel = {rgbPixel[0],rgbPixel[1],rgbPixel[2]};
 
                 //overwrite least significant bit
-
-
-
+                encodedPixel[0] &= (0b11111110 | fileBits.getFirst()) ;
+                fileBits.removeFirst();
+                encodedPixel[1] &= (0b11111110 | fileBits.getFirst()) ;
+                fileBits.removeFirst();
+                encodedPixel[2] &= (0b11111110 | fileBits.getFirst()) ;
+                fileBits.removeFirst();
 
                 stenographyImg.setRGB(x, y, pixelColorToRGB(encodedPixel));
             }
         }
 
-
         return stenographyImg;
+    }
+
+    private ArrayList<Byte> getBytesFromFile(File src) {
+        byte[] fileBytes = new byte[0];
+        try{
+            fileBytes = Files.readAllBytes(src.toPath());
+        }
+        catch (IOException e)
+        {
+            System.out.println(e.getMessage());
+        }
+
+        ArrayList<Byte> fileBits = new ArrayList<>();
+
+        for(byte b : fileBytes)
+        {
+            fileBits.add((byte) ((b & 0b10000000) >> 7));
+            fileBits.add((byte) ((b & 0b01000000) >> 6));
+            fileBits.add((byte) ((b & 0b00100000) >> 5));
+            fileBits.add((byte) ((b & 0b00010000) >> 4));
+            fileBits.add((byte) ((b & 0b00001000) >> 3));
+            fileBits.add((byte) ((b & 0b00000100) >> 2));
+            fileBits.add((byte) ((b & 0b00000010) >> 1));
+            fileBits.add((byte) ((b & 0b00000001)));
+        }
+
+        return fileBits;
     }
 
 
