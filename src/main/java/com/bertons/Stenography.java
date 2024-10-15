@@ -7,8 +7,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.BitSet;
-import java.util.stream.Stream;
 
 public class Stenography {
 
@@ -24,27 +22,34 @@ public class Stenography {
         int imgHeight = srcImage.getHeight();
         BufferedImage stenographyImg = new BufferedImage(imgWidth, imgHeight, BufferedImage.TYPE_INT_RGB);
 
-        ArrayList<Byte> fileBits = getBytesFromFile(src);
+        ArrayList<Byte> fileBits = getBitsFromFile(src);
 
+        //Navigate the image pixel by pixel
         for (int x = 0; x < imgWidth; x++)
         {
             for(int y = 0; y < imgHeight; y++)
             {
-                //Navigate the image pixel by pixel
-                //Get RGB values
+                //Get RGB values of the pixel
                 int[] rgbPixel = pixelColorValuesRGB(srcImage.getRGB(x, y));
                 System.out.println("Pixel(" +x+","+y+"): " + Arrays.toString(rgbPixel));
 
-                //Change RGB values
+                //Change RGB values injecting data
                 int[] encodedPixel = {rgbPixel[0],rgbPixel[1],rgbPixel[2]};
 
-                //overwrite least significant bit
-                encodedPixel[0] &= (0b11111110 | fileBits.getFirst()) ;
-                fileBits.removeFirst();
-                encodedPixel[1] &= (0b11111110 | fileBits.getFirst()) ;
-                fileBits.removeFirst();
-                encodedPixel[2] &= (0b11111110 | fileBits.getFirst()) ;
-                fileBits.removeFirst();
+                //overwrite the least significant bit
+                for(int i = 0; i < 3 && !fileBits.isEmpty(); i++)
+                {
+                    byte bit = fileBits.getFirst();
+                    if(bit == 1)
+                    {
+                        encodedPixel[i] |= 1;
+                    }
+                    else
+                    {
+                        encodedPixel[i] &= ~1;
+                    }
+                    fileBits.removeFirst();
+                }
 
                 stenographyImg.setRGB(x, y, pixelColorToRGB(encodedPixel));
             }
@@ -53,7 +58,7 @@ public class Stenography {
         return stenographyImg;
     }
 
-    private ArrayList<Byte> getBytesFromFile(File src) {
+    private ArrayList<Byte> getBitsFromFile(File src) {
         byte[] fileBytes = new byte[0];
         try{
             fileBytes = Files.readAllBytes(src.toPath());
@@ -109,6 +114,18 @@ public class Stenography {
         rgb |= (rgbValues[1] << 8) & 0xFF00;
         rgb |= (rgbValues[0] << 16) & 0xFF0000;
         return rgb;
+    }
+    private void save(BufferedImage image, String fileName, String format)
+    {
+        File file = new File(fileName + "." + format);
+        try
+        {
+            ImageIO.write(image, format, file); // ignore returned boolean
+        }
+        catch(IOException e)
+        {
+            System.out.println("Write error for " + file.getPath() + ": " + e.getMessage());
+        }
     }
 
 }
