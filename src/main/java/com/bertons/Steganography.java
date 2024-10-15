@@ -21,16 +21,7 @@ public abstract class Steganography {
                 //Get RGB values of the pixel
                 int[] rgbPixel = pixelColorValuesRGB(srcImage.getRGB(x, y));
                 //overwrite the least significant bit
-                int[] encodedPixel = {rgbPixel[0], rgbPixel[1], rgbPixel[2]};
-                for (int i = 0; i < 3 && !fileBits.isEmpty(); i++) {
-                    byte bit = fileBits.getFirst();
-                    if (bit == 1) {
-                        encodedPixel[i] |= 1;
-                    } else {
-                        encodedPixel[i] &= ~1;
-                    }
-                    fileBits.removeFirst();
-                }
+                int[] encodedPixel = getEncodedPixel(rgbPixel, fileBits);
 
                 stenographyImg.getImage().setRGB(x, y, pixelColorToRGB(encodedPixel));
 
@@ -43,6 +34,20 @@ public abstract class Steganography {
         }
 
         return stenographyImg;
+    }
+
+    private static int[] getEncodedPixel(int[] rgbPixel, ArrayList<Byte> fileBits) {
+        int[] encodedPixel = {rgbPixel[0], rgbPixel[1], rgbPixel[2]};
+        for (int i = 0; i < 3 && !fileBits.isEmpty(); i++) {
+            byte bit = fileBits.getFirst();
+            if (bit == 1) {
+                encodedPixel[i] |= 1;
+            } else {
+                encodedPixel[i] &= ~1;
+            }
+            fileBits.removeFirst();
+        }
+        return encodedPixel;
     }
 
     private static ArrayList<Byte> getBitsFromFile(File src)
