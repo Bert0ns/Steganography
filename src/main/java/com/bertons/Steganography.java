@@ -8,57 +8,46 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-public class Stenography {
-
-    BufferedImage srcImage;
-    public Stenography(String imgPath)
-    {
-        this.srcImage = OpenImage(imgPath);
-    }
-
-    public BufferedImage Encode(File src)
-    {
+public abstract class Steganography {
+    public static SteganographyImage Encode(BufferedImage srcImage, File toEncode) {
         int imgWidth = srcImage.getWidth();
         int imgHeight = srcImage.getHeight();
-        BufferedImage stenographyImg = new BufferedImage(imgWidth, imgHeight, BufferedImage.TYPE_INT_RGB);
+        SteganographyImage stenographyImg = new SteganographyImage(new BufferedImage(imgWidth, imgHeight, BufferedImage.TYPE_INT_RGB));
 
-        ArrayList<Byte> fileBits = getBitsFromFile(src);
+        ArrayList<Byte> fileBits = getBitsFromFile(toEncode);
 
         //Navigate the image pixel by pixel
-        for (int x = 0; x < imgWidth; x++)
-        {
-            for(int y = 0; y < imgHeight; y++)
-            {
+        for (int x = 0; x < imgWidth; x++) {
+            for (int y = 0; y < imgHeight; y++) {
                 //Get RGB values of the pixel
                 int[] rgbPixel = pixelColorValuesRGB(srcImage.getRGB(x, y));
-                System.out.println("Pixel(" +x+","+y+"): " + Arrays.toString(rgbPixel));
-
-                //Change RGB values injecting data
-                int[] encodedPixel = {rgbPixel[0],rgbPixel[1],rgbPixel[2]};
-
                 //overwrite the least significant bit
-                for(int i = 0; i < 3 && !fileBits.isEmpty(); i++)
-                {
+                int[] encodedPixel = {rgbPixel[0], rgbPixel[1], rgbPixel[2]};
+                for (int i = 0; i < 3 && !fileBits.isEmpty(); i++) {
                     byte bit = fileBits.getFirst();
-                    if(bit == 1)
-                    {
+                    if (bit == 1) {
                         encodedPixel[i] |= 1;
-                    }
-                    else
-                    {
+                    } else {
                         encodedPixel[i] &= ~1;
                     }
                     fileBits.removeFirst();
                 }
 
-                stenographyImg.setRGB(x, y, pixelColorToRGB(encodedPixel));
+                stenographyImg.getImage().setRGB(x, y, pixelColorToRGB(encodedPixel));
+
+                //Debug
+                System.out.print("Origin Image->  ");
+                System.out.println("Pixel(" + x + "," + y + "): " + Arrays.toString(rgbPixel));
+                System.out.print("Encoded Image-> ");
+                System.out.println("Pixel(" + x + "," + y + "): " + Arrays.toString(encodedPixel));
             }
         }
 
         return stenographyImg;
     }
 
-    private ArrayList<Byte> getBitsFromFile(File src) {
+    private static ArrayList<Byte> getBitsFromFile(File src)
+    {
         byte[] fileBytes = new byte[0];
         try{
             fileBytes = Files.readAllBytes(src.toPath());
@@ -84,23 +73,7 @@ public class Stenography {
 
         return fileBits;
     }
-
-
-    private BufferedImage OpenImage(String filePath)
-    {
-        File imgFile = new File(filePath);
-        BufferedImage img = null;
-        try{
-            img = ImageIO.read(imgFile);
-        }
-        catch(IOException e){
-            System.out.println(e.getMessage());
-        }
-
-        return img;
-    }
-
-    private int[] pixelColorValuesRGB(int colorRGB)
+    private static int[] pixelColorValuesRGB(int colorRGB)
     {
         int[] rgb = new int[3];
         rgb[0] = (colorRGB >> 16) & 0xFF;
@@ -108,24 +81,11 @@ public class Stenography {
         rgb[2] = (colorRGB) & 0xFF;
         return rgb;
     }
-    private int pixelColorToRGB(int[] rgbValues)
+    private static int pixelColorToRGB(int[] rgbValues)
     {
         int rgb = rgbValues[2] & 0xFF;
         rgb |= (rgbValues[1] << 8) & 0xFF00;
         rgb |= (rgbValues[0] << 16) & 0xFF0000;
         return rgb;
     }
-    private void save(BufferedImage image, String fileName, String format)
-    {
-        File file = new File(fileName + "." + format);
-        try
-        {
-            ImageIO.write(image, format, file); // ignore returned boolean
-        }
-        catch(IOException e)
-        {
-            System.out.println("Write error for " + file.getPath() + ": " + e.getMessage());
-        }
-    }
-
 }
