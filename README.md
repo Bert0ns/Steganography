@@ -16,3 +16,7 @@ The `Stenography.encode()` function reads every bit from the given file and over
 To indicate the end of the hidden data, an eight-bit sequence is also encoded in the image.
 
 ## TODO
+
+- Make it an app
+
+- Add some layer of encryption?
