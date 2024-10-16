@@ -5,7 +5,6 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.ArrayList;
-import java.util.Arrays;
 
 public abstract class Steganography {
     public static SteganographyImage Encode(final BufferedImage srcImage, final File toEncode)
