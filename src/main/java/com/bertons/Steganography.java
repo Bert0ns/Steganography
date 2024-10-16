@@ -2,12 +2,10 @@ package com.bertons;
 
 import java.awt.image.BufferedImage;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.stream.Collector;
 
 public abstract class Steganography {
     public static SteganographyImage Encode(final BufferedImage srcImage, final File toEncode) {
