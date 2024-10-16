@@ -8,13 +8,20 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 public abstract class Steganography {
-    public static SteganographyImage Encode(final BufferedImage srcImage, final File toEncode) {
+    public static SteganographyImage Encode(final BufferedImage srcImage, final File toEncode)
+    {
         int imgWidth = srcImage.getWidth();
         int imgHeight = srcImage.getHeight();
+        if(!fileCanBeEncodedInImage(imgHeight, imgWidth, toEncode))
+        {
+            System.out.println("File can't be encoded beacause it is too large");
+            return null;
+        }
+
         SteganographyImage stenographyImg = new SteganographyImage(new BufferedImage(imgWidth, imgHeight, BufferedImage.TYPE_INT_RGB));
 
         ArrayList<Byte> fileBits = getBitsFromFile(toEncode);
-
+        appendNullByte(fileBits);
         //Navigate the image pixel by pixel
         for (int x = 0; x < imgWidth; x++) {
             for (int y = 0; y < imgHeight; y++) {
@@ -25,11 +32,12 @@ public abstract class Steganography {
 
                 stenographyImg.getImage().setRGB(x, y, pixelColorToRGB(encodedPixel));
 
-                //Debug
+                /*Debug
                 System.out.print("Origin Image->  ");
                 System.out.println("Pixel(" + x + "," + y + "): " + Arrays.toString(rgbPixel));
                 System.out.print("Encoded Image-> ");
                 System.out.println("Pixel(" + x + "," + y + "): " + Arrays.toString(encodedPixel));
+                 */
             }
         }
 
@@ -56,20 +64,53 @@ public abstract class Steganography {
         }
 
         byte[] fileBytes = getBytesFromBitsList(fileBits);
-        try{
+        fileBytes = cutWhereFound(fileBytes, (byte) 0);
+        writeToNewFileTheDecodedBytes(pathNewFile, fileBytes);
+    }
 
+    private static void writeToNewFileTheDecodedBytes(File pathNewFile, byte[] fileBytes) {
+        try
+        {
             Files.write(pathNewFile.toPath(), fileBytes);
         }
-        catch(IOException e){
+        catch(IOException e)
+        {
             System.out.println(e.getMessage());
         }
     }
+
     public static void Decode(final SteganographyImage srcImage, final File pathNewFile)
     {
         Decode(srcImage.getImage(), pathNewFile);
     }
 
-    private static byte[] getBytesFromBitsList(ArrayList<Byte> fileBits) {
+    private static void appendNullByte(ArrayList<Byte> fileBits)
+    {
+        //Add a null byte
+        for(int i = 0; i < 8; i++)
+        {
+            fileBits.add((byte) 0);
+        }
+    }
+    private static byte[] cutWhereFound(byte[] bytes, byte toFind)
+    {
+        int i;
+        for(i = 0; i < bytes.length; i++) {
+            if(bytes[i] == toFind) {
+                break;
+            }
+        }
+        if(i == bytes.length) {
+            System.out.println("Error Last byte Not found");
+            return bytes;
+        }
+
+        byte[] newBytes = new byte[i + 1];
+        System.arraycopy(bytes, 0, newBytes, 0, newBytes.length);
+        return newBytes;
+    }
+    private static byte[] getBytesFromBitsList(ArrayList<Byte> fileBits)
+    {
         ArrayList<Byte> bytes = new ArrayList<>();
         int bitNumber = 0;
         int byteNumber = 0;
@@ -103,8 +144,8 @@ public abstract class Steganography {
 
         return byteArray;
     }
-
-    private static int[] getEncodedPixel(int[] rgbPixel, ArrayList<Byte> fileBits) {
+    private static int[] getEncodedPixel(int[] rgbPixel, ArrayList<Byte> fileBits)
+    {
         int[] encodedPixel = {rgbPixel[0], rgbPixel[1], rgbPixel[2]};
         for (int i = 0; i < 3 && !fileBits.isEmpty(); i++) {
             byte bit = fileBits.getFirst();
@@ -117,7 +158,6 @@ public abstract class Steganography {
         }
         return encodedPixel;
     }
-
     private static ArrayList<Byte> getBitsFromFile(File src)
     {
         byte[] fileBytes = new byte[0];
@@ -159,5 +199,9 @@ public abstract class Steganography {
         rgb |= (rgbValues[1] << 8) & 0xFF00;
         rgb |= (rgbValues[0] << 16) & 0xFF0000;
         return rgb;
+    }
+    private static boolean fileCanBeEncodedInImage(int imgHeight, int imgWidth, File toEncode)
+    {
+        return (toEncode.length() * 8) <= (long) imgHeight * imgWidth * 3;
     }
 }
