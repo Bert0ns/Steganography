@@ -2,13 +2,15 @@ package com.bertons;
 
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.stream.Collector;
 
 public abstract class Steganography {
-    public static SteganographyImage Encode(BufferedImage srcImage, File toEncode) {
+    public static SteganographyImage Encode(final BufferedImage srcImage, final File toEncode) {
         int imgWidth = srcImage.getWidth();
         int imgHeight = srcImage.getHeight();
         SteganographyImage stenographyImg = new SteganographyImage(new BufferedImage(imgWidth, imgHeight, BufferedImage.TYPE_INT_RGB));
@@ -34,6 +36,74 @@ public abstract class Steganography {
         }
 
         return stenographyImg;
+    }
+
+    public static void Decode(final BufferedImage srcImage, final File pathNewFile)
+    {
+        int imgWidth = srcImage.getWidth();
+        int imgHeight = srcImage.getHeight();
+
+        ArrayList<Byte> fileBits = new ArrayList<>();
+
+        //Navigate the image pixel by pixel
+        for (int x = 0; x < imgWidth; x++) {
+            for (int y = 0; y < imgHeight; y++) {
+                //Get RGB values of the pixel
+                int[] rgbPixel = pixelColorValuesRGB(srcImage.getRGB(x, y));
+                //Get the least significant bits
+                fileBits.addLast((byte)(rgbPixel[0] & 0x00000001));
+                fileBits.addLast((byte)(rgbPixel[1] & 0x00000001));
+                fileBits.addLast((byte)(rgbPixel[2] & 0x00000001));
+            }
+        }
+
+        byte[] fileBytes = getBytesFromBitsList(fileBits);
+        try{
+
+            Files.write(pathNewFile.toPath(), fileBytes);
+        }
+        catch(IOException e){
+            System.out.println(e.getMessage());
+        }
+    }
+    public static void Decode(final SteganographyImage srcImage, final File pathNewFile)
+    {
+        Decode(srcImage.getImage(), pathNewFile);
+    }
+
+    private static byte[] getBytesFromBitsList(ArrayList<Byte> fileBits) {
+        ArrayList<Byte> bytes = new ArrayList<>();
+        int bitNumber = 0;
+        int byteNumber = 0;
+        while(!fileBits.isEmpty())
+        {
+            if(bitNumber == 0)
+            {
+                bytes.add((byte) 0);
+            }
+            if(bitNumber < 8)
+            {
+                byte data = bytes.getLast();
+                data = (byte) ((data << 1) + fileBits.removeFirst());
+                bytes.set(byteNumber, data);
+            }
+
+            bitNumber++;
+            if(bitNumber == 8)
+            {
+                bitNumber = 0;
+                byteNumber++;
+            }
+        }
+
+        byte[] byteArray = new byte[bytes.size()];
+
+        for(int i = 0; i < bytes.size(); i++)
+        {
+            byteArray[i] = bytes.get(i);
+        }
+
+        return byteArray;
     }
 
     private static int[] getEncodedPixel(int[] rgbPixel, ArrayList<Byte> fileBits) {
