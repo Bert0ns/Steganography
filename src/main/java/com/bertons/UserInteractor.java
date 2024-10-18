@@ -27,22 +27,9 @@ public abstract class UserInteractor {
         }
         return imgPath;
     }
-    
-    public static boolean isFileAnImage(File file) {
-        String mimeType;
-        try
-        {
-            mimeType = Files.probeContentType(file.toPath());
-        }
-        catch(IOException e)
-        {
-            return false;
-        }
 
-        return mimeType != null && mimeType.startsWith("image/");
-    }
-
-    public static File chooseFile() {
+    public static File chooseFile()
+    {
         JFileChooser chooser = new JFileChooser();
         chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
 
@@ -62,7 +49,8 @@ public abstract class UserInteractor {
         return fileChosen;
     }
 
-    public static File chooseSaveDestination() {
+    public static File chooseSaveDestination()
+    {
         JFileChooser chooser = new JFileChooser();
         File pathToSave = null;
         if(chooser.showSaveDialog(null) == JFileChooser.APPROVE_OPTION)
@@ -70,5 +58,48 @@ public abstract class UserInteractor {
             pathToSave = chooser.getSelectedFile();
         }
         return pathToSave;
+    }
+
+    public static boolean isFileAnImage(File file)
+    {
+        String mimeType;
+        try
+        {
+            mimeType = Files.probeContentType(file.toPath());
+        }
+        catch(IOException e)
+        {
+            return false;
+        }
+
+        return mimeType != null && mimeType.startsWith("image/");
+    }
+
+    public static void hideFileInImage() {
+        System.out.println("Select source image");
+        File srcImage = UserInteractor.chooseImage();
+        System.out.println(srcImage.getAbsolutePath());
+
+        System.out.println("Select file to encode");
+        File fileToEncode = UserInteractor.chooseFile();
+        System.out.println(fileToEncode.getAbsolutePath());
+
+        System.out.println("Select where do you want to save the new file");
+        File pathToSave = UserInteractor.chooseSaveDestination();
+        System.out.println(pathToSave.getAbsolutePath());
+
+        Steganography.hideFileInImage(srcImage, fileToEncode, pathToSave);
+    }
+
+    public static void extractFileFromImage() {
+        System.out.println("Select source image");
+        File srcImage = UserInteractor.chooseImage();
+        System.out.println(srcImage.getAbsolutePath());
+
+        System.out.println("Select where do you want to save the new file");
+        File pathToSave = UserInteractor.chooseSaveDestination();
+        System.out.println(pathToSave.getAbsolutePath());
+
+        Steganography.extractFileFromImage(srcImage, pathToSave);
     }
 }

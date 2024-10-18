@@ -5,9 +5,30 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.Objects;
 
 public abstract class Steganography {
-    public static SteganographyImage Encode(final BufferedImage srcImage, final File toEncode)
+    public static boolean hideFileInImage(File srcImage, File fileToEncode, File pathToSave)
+    {
+        SteganographyImage initialImage = new SteganographyImage(srcImage);
+        SteganographyImage encodedImage = Steganography.Encode(initialImage.getImage(), fileToEncode);
+        if(Objects.isNull(encodedImage))
+        {
+            System.out.println("Something went wrong, while encoding");
+            return false;
+        }
+
+        encodedImage.saveImage(new File(pathToSave.toPath() + ".png"), "png");
+        return true;
+    }
+
+    public static void extractFileFromImage(File srcImage, File pathToSave)
+    {
+        SteganographyImage img = new SteganographyImage(srcImage);
+        Steganography.Decode(img, new File(pathToSave.getPath() + ".txt"));
+    }
+
+    private static SteganographyImage Encode(final BufferedImage srcImage, final File toEncode)
     {
         int imgWidth = srcImage.getWidth();
         int imgHeight = srcImage.getHeight();
@@ -42,8 +63,7 @@ public abstract class Steganography {
 
         return stenographyImg;
     }
-
-    public static void Decode(final BufferedImage srcImage, final File pathNewFile)
+    private static void Decode(final BufferedImage srcImage, final File pathNewFile)
     {
         int imgWidth = srcImage.getWidth();
         int imgHeight = srcImage.getHeight();
@@ -66,8 +86,8 @@ public abstract class Steganography {
         fileBytes = cutWhereFound(fileBytes, (byte) 0);
         writeToNewFileTheDecodedBytes(pathNewFile, fileBytes);
     }
-
-    private static void writeToNewFileTheDecodedBytes(File pathNewFile, byte[] fileBytes) {
+    private static void writeToNewFileTheDecodedBytes(File pathNewFile, byte[] fileBytes)
+    {
         try
         {
             Files.write(pathNewFile.toPath(), fileBytes);
@@ -77,12 +97,10 @@ public abstract class Steganography {
             System.out.println(e.getMessage());
         }
     }
-
-    public static void Decode(final SteganographyImage srcImage, final File pathNewFile)
+    private static void Decode(final SteganographyImage srcImage, final File pathNewFile)
     {
         Decode(srcImage.getImage(), pathNewFile);
     }
-
     private static void appendNullByte(ArrayList<Byte> fileBits)
     {
         //Add a null byte
